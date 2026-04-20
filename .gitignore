@@ -54,3 +54,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# DB backups — all variants
+*.db.pre_*
+*.db.backup*
