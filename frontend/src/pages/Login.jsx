@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../hooks/useAuth'
-import { Briefcase } from 'lucide-react'
-
 const canvasStyle = {
   background: 'radial-gradient(ellipse 80% 60% at 20% 0%, #F5F0FF 0%, #FAFAFB 45%, #FFFFFF 100%)'
 }
@@ -57,9 +55,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2.5 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={gradientBtnStyle}>
-              <Briefcase className="h-5 w-5 text-white" />
-            </div>
+            <img src="/geply-logo.png" alt="Geply" className="h-10 w-auto" />
             <h1 className="font-serif text-[32px] tracking-tight text-gray-900">Geply</h1>
           </div>
           <p className="text-gray-500 text-sm">AI-powered interview platform</p>

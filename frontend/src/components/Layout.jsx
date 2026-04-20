@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../hooks/useAuth'
-import { LayoutDashboard, LogOut, Briefcase, UserCircle } from 'lucide-react'
+import { LayoutDashboard, LogOut, UserCircle } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 
 function Avatar({ size = 'h-8 w-8', textSize = 'text-xs', name, avatarUrl }) {
@@ -21,13 +21,11 @@ export default function Layout() {
 
   return (
     <div className="app-canvas flex h-screen">
-      {/* ── Glass Sidebar ── */}
+      {/* â”€â”€ Glass Sidebar â”€â”€ */}
       <aside className="w-60 glass-strong flex flex-col border-r border-white/5 relative z-10">
         <div className="p-5 border-b border-white/5">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center shadow-glow-brand group-hover:scale-105 transition-transform">
-              <Briefcase className="h-[18px] w-[18px] text-white" />
-            </div>
+            <img src="/geply-logo.png" alt="Geply" className="h-9 w-auto group-hover:scale-105 transition-transform" />
             <span className="font-display text-[22px] text-white tracking-tight">Geply</span>
           </Link>
         </div>
@@ -65,7 +63,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Main content column ── */}
+      {/* â”€â”€ Main content column â”€â”€ */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-14 glass border-b border-white/5 flex items-center justify-end px-6 shrink-0 relative z-10">
           <div className="flex items-center gap-3">

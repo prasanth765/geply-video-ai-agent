@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { schedulesApi } from '../lib/api'
-import { Calendar, Clock, Check, AlertCircle, Video, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RotateCcw, Ban, Mail, Sparkles } from 'lucide-react'
+import { Calendar, Clock, Briefcase, Check, AlertCircle, Video, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RotateCcw, Ban, Mail, Sparkles } from 'lucide-react'
 
 function parseUTC(dateStr) {
   if (!dateStr) return new Date()
@@ -34,7 +34,7 @@ for (let h = 0; h < 24; h++) {
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-// â”€â”€ Candidate-facing light canvas â”€â”€
+// ── Candidate-facing light canvas ──
 // Soft off-white with radial gradient washes in brand colors
 function CandidateCanvas({ children }) {
   return (
@@ -128,12 +128,16 @@ function Countdown({ targetDate }) {
   }}>{remaining}</span>
 }
 
-// â”€â”€ Reusable JD card â€” shown on every candidate view â”€â”€
+// ── Reusable JD card — shown on every candidate view ──
 function JobInfoCard({ data, jdExpanded, setJdExpanded }) {
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white shadow-[0_8px_30px_rgba(168,85,247,0.08)] p-6 mb-5">
       <div className="flex items-center gap-2 mb-3">
-        <img src="/geply-logo.png" alt="Geply" className="h-7 w-auto" />
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
+          background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)'
+        }}>
+          <Briefcase className="h-3.5 w-3.5 text-white" />
+        </div>
         <span className="text-xs text-gray-500 font-medium">{data?.company}</span>
       </div>
       <h1 className="font-serif text-[28px] leading-tight text-gray-900 mb-2 tracking-tight">{data?.job_title}</h1>
@@ -239,7 +243,7 @@ export default function CandidateSchedule() {
     })
   }, [selectedDate])
 
-  // â”€â”€ Loading â”€â”€
+  // ── Loading ──
   if (loading) return (
     <CandidateCanvas>
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -251,7 +255,7 @@ export default function CandidateSchedule() {
     </CandidateCanvas>
   )
 
-  // â”€â”€ Error â”€â”€
+  // ── Error ──
   if (error && !data) return (
     <CandidateCanvas>
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -266,7 +270,7 @@ export default function CandidateSchedule() {
     </CandidateCanvas>
   )
 
-  // â”€â”€ Already interviewed â”€â”€
+  // ── Already interviewed ──
   if (data?.already_interviewed) return (
     <CandidateCanvas>
       <div className="max-w-lg mx-auto">
@@ -297,7 +301,7 @@ export default function CandidateSchedule() {
     </CandidateCanvas>
   )
 
-  // â”€â”€ Already booked â€” show confirmation â”€â”€
+  // ── Already booked — show confirmation ──
   if (booked && !rescheduling && data?.existing_booking) {
     const bk = data.existing_booking
     const startDate = parseUTC(bk.start_time)
@@ -357,7 +361,7 @@ export default function CandidateSchedule() {
     )
   }
 
-  // â”€â”€ Scheduling / Rescheduling form â”€â”€
+  // ── Scheduling / Rescheduling form ──
   return (
     <CandidateCanvas>
       <div className="max-w-lg mx-auto">
@@ -469,7 +473,7 @@ export default function CandidateSchedule() {
               <p className="text-sm font-medium text-brand-700">
                 {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} at {TIMES.find(t => t.value === selectedTime)?.label}
               </p>
-              <p className="text-xs text-brand-600 mt-0.5">45-minute AI interview Â· {tzLabel(Intl.DateTimeFormat().resolvedOptions().timeZone)}</p>
+              <p className="text-xs text-brand-600 mt-0.5">45-minute AI interview · {tzLabel(Intl.DateTimeFormat().resolvedOptions().timeZone)}</p>
             </div>
           )}
 
