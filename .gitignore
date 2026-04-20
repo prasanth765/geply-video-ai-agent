@@ -58,3 +58,6 @@ logs/
 # DB backups — all variants
 *.db.pre_*
 *.db.backup*
+
+# Backup files with numbered suffixes (.backup2, .backup3, etc.)
+*.backup[0-9]*
