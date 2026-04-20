@@ -1,0 +1,56 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+venv/
+.venv/
+
+# Node
+node_modules/
+dist/
+.vite/
+.parcel-cache/
+.eslintcache
+
+# Environment & secrets (NEVER commit)
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Databases (contain real data — NEVER commit)
+*.db
+*.db-journal
+*.db.backup_*
+*.sqlite
+*.sqlite3
+
+# User-uploaded content (PII — NEVER commit)
+uploads/
+!uploads/.gitkeep
+
+# Temporary working files
+_cleanup_*/
+_migrate_*.py
+_direct_test.html
+*.backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/

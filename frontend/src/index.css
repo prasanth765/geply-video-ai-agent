@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-gray-50 text-gray-900; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+  .bg-gray-800 ::-webkit-scrollbar-thumb { background: #374151; }
+  .bg-gray-800 ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+}
