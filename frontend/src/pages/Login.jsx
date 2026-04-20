@@ -3,6 +3,22 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../hooks/useAuth'
 import { Briefcase } from 'lucide-react'
 
+const canvasStyle = {
+  background: 'radial-gradient(ellipse 80% 60% at 20% 0%, #F5F0FF 0%, #FAFAFB 45%, #FFFFFF 100%)'
+}
+const blob1Style = {
+  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%)',
+  filter: 'blur(60px)', transform: 'translate(30%, -30%)'
+}
+const blob2Style = {
+  background: 'radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, transparent 70%)',
+  filter: 'blur(60px)', transform: 'translate(-30%, 30%)'
+}
+const gradientBtnStyle = {
+  background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
+  boxShadow: '0 4px 14px rgba(168, 85, 247, 0.35)'
+}
+
 export default function Login() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -34,24 +50,29 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={canvasStyle}>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none" style={blob1Style}></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] pointer-events-none" style={blob2Style}></div>
+
+      <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Briefcase className="h-8 w-8 text-brand-500" />
-            <h1 className="text-2xl font-bold">Geply</h1>
+          <div className="inline-flex items-center gap-2.5 mb-2">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={gradientBtnStyle}>
+              <Briefcase className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="font-serif text-[32px] tracking-tight text-gray-900">Geply</h1>
           </div>
-          <p className="text-gray-500 text-sm">AI-Powered Interview Platform</p>
+          <p className="text-gray-500 text-sm">AI-powered interview platform</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-0.5">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white shadow-[0_8px_30px_rgba(168,85,247,0.08)] p-6">
+          <div className="flex mb-5 bg-gray-100/80 rounded-lg p-0.5">
             {['login', 'register'].map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`flex-1 py-1.5 text-sm rounded-md transition-colors ${
-                  mode === m ? 'bg-white font-medium shadow-sm' : 'text-gray-500'
+                className={`flex-1 py-1.5 text-sm rounded-md transition-all ${
+                  mode === m ? 'bg-white font-medium shadow-sm text-gray-900' : 'text-gray-500'
                 }`}
               >
                 {m === 'login' ? 'Sign in' : 'Register'}
@@ -59,7 +80,7 @@ export default function Login() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'register' && (
               <>
                 <input
@@ -68,14 +89,14 @@ export default function Login() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
                 />
                 <input
                   type="text"
                   placeholder="Company"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
                 />
               </>
             )}
@@ -86,19 +107,18 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
             />
 
-            {/* Password Input with Forgot Password Link */}
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Password
                 </label>
                 {mode === 'login' && (
                   <Link
                     to="/forgot-password"
-                    className="text-xs text-brand-500 hover:text-brand-700 font-medium transition-colors"
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
                   >
                     Forgot password?
                   </Link>
@@ -111,25 +131,28 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
               />
             </div>
 
-            {error && <p className="text-red-500 text-xs">{error}</p>}
+            {error && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 text-white rounded-xl text-sm font-medium transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+              style={gradientBtnStyle}
             >
               {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
           </form>
-
-          <p className="text-xs text-gray-400 text-center mt-4">
-            {/* Footer text if needed */}
-          </p>
         </div>
+
+        <p className="text-center text-xs text-gray-400 mt-6">Powered by Geply</p>
       </div>
     </div>
   )
