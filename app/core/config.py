@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 import sys
@@ -62,13 +62,6 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "llama-3.1-8b-instant"
     llm_max_tokens: int = 2048
-
-    # â”€â”€ Deepgram Voice Agent â”€â”€
-    deepgram_api_key: str = ""
-    deepgram_stt_model: str = "nova-3"
-    deepgram_tts_model: str = "aura-2-odysseus-en"
-    # Voice Agent listen provider version (tested with "v2")
-    deepgram_listen_version: str = "v2"
 
     # â”€â”€ CORS â”€â”€
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
