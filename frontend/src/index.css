@@ -13,3 +13,156 @@
   .bg-gray-800 ::-webkit-scrollbar-thumb { background: #374151; }
   .bg-gray-800 ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
 }
+/* ─── god-mode globals ─── */
+@layer base {
+  html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Aurora canvas — applied at app root */
+  .app-canvas {
+    background: radial-gradient(ellipse at 20% 10%, #2A1055 0%, #14081F 40%, #08050F 100%);
+    min-height: 100vh;
+    color: #E8E6F5;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Blob decorations — purple + pink + blue light sources */
+  .app-canvas::before,
+  .app-canvas::after {
+    content: '';
+    position: fixed;
+    pointer-events: none;
+    filter: blur(80px);
+    z-index: 0;
+  }
+  .app-canvas::before {
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+  }
+  .app-canvas::after {
+    bottom: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, transparent 70%);
+  }
+
+  /* All screen content sits above the blobs */
+  .app-canvas > * { position: relative; z-index: 1; }
+}
+
+@layer components {
+  /* Glass panel — use for cards, modals, panels */
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+  }
+  .glass-brand {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.08) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 0.5px solid rgba(168, 85, 247, 0.3);
+  }
+
+  /* Serif display — for hero headings, editorial moments */
+  .font-display {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  /* Gradient text — use sparingly for emphasis */
+  .text-gradient {
+    background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Brand button */
+  .btn-brand {
+    background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
+  }
+  .btn-brand:hover   { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4); }
+  .btn-brand:active  { transform: translateY(0); }
+
+  /* Ghost button — for secondary actions */
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: #E8E6F5;
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .btn-ghost:hover   { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
+
+  /* Pills — status / category indicators */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 0.5px solid;
+  }
+  .pill-brand   { background: rgba(168, 85, 247, 0.15); color: #D8B4FE; border-color: rgba(168, 85, 247, 0.3); }
+  .pill-accent  { background: rgba(236, 72, 153, 0.15); color: #F9A8D4; border-color: rgba(236, 72, 153, 0.3); }
+  .pill-success { background: rgba(16, 185, 129, 0.15); color: #6EE7B7; border-color: rgba(16, 185, 129, 0.3); }
+  .pill-warning { background: rgba(245, 158, 11, 0.15); color: #FCD34D; border-color: rgba(245, 158, 11, 0.3); }
+  .pill-info    { background: rgba(59, 130, 246, 0.15); color: #93C5FD; border-color: rgba(59, 130, 246, 0.3); }
+  .pill-muted   { background: rgba(255, 255, 255, 0.06); color: #A8A3C7; border-color: rgba(255, 255, 255, 0.12); }
+
+  /* Form inputs — dark themed */
+  .input-dark {
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    color: #E8E6F5;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.15s ease;
+  }
+  .input-dark::placeholder { color: #6B6686; }
+  .input-dark:focus {
+    outline: none;
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  }
+
+  /* Text colors — semantic in dark mode */
+  .text-primary   { color: #FFFFFF; }
+  .text-secondary { color: #A8A3C7; }
+  .text-tertiary  { color: #6B6686; }
+  .text-faint     { color: #555; }
+}
+
+/* Smooth scroll everywhere */
+html { scroll-behavior: smooth; }
+
+/* Dark scrollbar */
+::-webkit-scrollbar        { width: 10px; height: 10px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(168, 85, 247, 0.25); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.4); }
