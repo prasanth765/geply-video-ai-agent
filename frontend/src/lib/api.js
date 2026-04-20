@@ -15,8 +15,27 @@ api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('geply_token')
-      window.location.href = '/login'
+      // Don't redirect candidate/public pages to /login.
+      // Candidates are anonymous users holding an invite JWT in the URL -
+      // they have no Geply account, so /login would be a dead end for them.
+      const path = window.location.pathname
+      const isCandidatePage =
+        path.startsWith('/schedule/') ||
+        path.startsWith('/interview/')
+
+      const reqUrl = err.config?.url || ''
+      const isPublicApi =
+        reqUrl.includes('/schedules/available') ||
+        reqUrl.includes('/schedules/book') ||
+        reqUrl.includes('/schedules/self-schedule') ||
+        reqUrl.includes('/schedules/request-re-interview') ||
+        reqUrl.includes('/interviews/room-token') ||
+        reqUrl.includes('/interviews/proctor-event')
+
+      if (!isCandidatePage && !isPublicApi) {
+        localStorage.removeItem('geply_token')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }

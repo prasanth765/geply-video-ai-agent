@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../hooks/useAuth'
 import { LayoutDashboard, LogOut, Briefcase, UserCircle } from 'lucide-react'
@@ -7,8 +6,8 @@ import NotificationBell from './NotificationBell'
 function Avatar({ size = 'h-8 w-8', textSize = 'text-xs', name, avatarUrl }) {
   const initials = name ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U'
 
-  if (avatarUrl) return <img src={avatarUrl} alt={name} className={`${size} rounded-full object-cover border-2 border-white shadow-sm`} />
-  return <div className={`${size} rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center ${textSize} font-bold text-white shadow-sm`}>{initials}</div>
+  if (avatarUrl) return <img src={avatarUrl} alt={name} className={`${size} rounded-full object-cover border border-white/20 shadow-md`} />
+  return <div className={`${size} rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center ${textSize} font-medium text-white shadow-md`}>{initials}</div>
 }
 
 export default function Layout() {
@@ -21,44 +20,59 @@ export default function Layout() {
   ]
 
   return (
-    <div className="flex h-screen">
-      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <Link to="/" className="flex items-center gap-2">
-            <Briefcase className="h-6 w-6 text-blue-500" />
-            <span className="font-semibold text-lg">Geply</span>
+    <div className="app-canvas flex h-screen">
+      {/* ── Glass Sidebar ── */}
+      <aside className="w-60 glass-strong flex flex-col border-r border-white/5 relative z-10">
+        <div className="p-5 border-b border-white/5">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center shadow-glow-brand group-hover:scale-105 transition-transform">
+              <Briefcase className="h-[18px] w-[18px] text-white" />
+            </div>
+            <span className="font-display text-[22px] text-white tracking-tight">Geply</span>
           </Link>
         </div>
+
         <nav className="flex-1 p-3 space-y-1">
           {nav.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
             return (
               <Link key={to} to={to}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                <Icon className="h-4 w-4" />{label}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                  active
+                    ? 'glass-brand text-white font-medium'
+                    : 'text-secondary hover:bg-white/5 hover:text-white'
+                }`}>
+                <Icon className="h-[16px] w-[16px]" />
+                {label}
               </Link>
             )
           })}
         </nav>
-        <div className="p-3 border-t border-gray-200">
-          <Link to="/profile" className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors">
-            <Avatar size="h-8 w-8" textSize="text-xs" name={user?.full_name} avatarUrl={user?.avatar_url} />
+
+        {/* User card at bottom */}
+        <div className="p-3 border-t border-white/5">
+          <Link to="/profile" className="flex items-center gap-2.5 px-2.5 py-2 hover:bg-white/5 rounded-lg transition-colors">
+            <Avatar size="h-9 w-9" textSize="text-xs" name={user?.full_name} avatarUrl={user?.avatar_url} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.full_name}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+              <p className="text-xs text-tertiary truncate">{user?.email}</p>
             </div>
-            <button onClick={(e) => { e.preventDefault(); logout() }} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+            <button onClick={(e) => { e.preventDefault(); logout() }}
+              className="p-1.5 text-tertiary hover:text-danger hover:bg-white/5 rounded-md transition-colors" title="Logout">
               <LogOut className="h-4 w-4" />
             </button>
           </Link>
         </div>
       </aside>
 
+      {/* ── Main content column ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-end px-6 shrink-0">
+        <header className="h-14 glass border-b border-white/5 flex items-center justify-end px-6 shrink-0 relative z-10">
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <Link to="/profile"><Avatar size="h-9 w-9" textSize="text-xs" name={user?.full_name} avatarUrl={user?.avatar_url} /></Link>
+            <Link to="/profile">
+              <Avatar size="h-9 w-9" textSize="text-xs" name={user?.full_name} avatarUrl={user?.avatar_url} />
+            </Link>
           </div>
         </header>
         <main className="flex-1 overflow-auto"><Outlet /></main>
