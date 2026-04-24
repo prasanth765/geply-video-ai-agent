@@ -548,7 +548,11 @@ function JobSettingsBanner({ job, onSave }) {
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Scheduled" field="scheduled" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Report" field="score" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium">Notes</th>
-                  <th className="text-right px-4 py-3 font-medium min-w-[180px]">Actions</th>
+                  <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Invite</th>
+                  <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Questions</th>
+                  <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Edit</th>
+                  <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Retry</th>
+                  <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Delete</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -565,9 +569,9 @@ function JobSettingsBanner({ job, onSave }) {
                           : <span className="w-3.5" />}
                       </td>
                       <td className="px-2 py-3.5 text-tertiary text-xs font-medium">{idx + 1}</td>
-                      <td className="px-4 py-3.5">
-                        <div className="font-medium text-white">{c.full_name || '-'}</div>
-                        <div className="text-xs text-tertiary mt-0.5">{c.email?.includes('@pending.geply') ? '-' : c.email}</div>
+                      <td className="px-4 py-3.5 max-w-[220px]">
+                        <div className="font-medium text-white truncate" title={c.full_name || ''}>{c.full_name || '-'}</div>
+                        <div className="text-xs text-tertiary mt-0.5 truncate" title={c.email || ''}>{c.email?.includes('@pending.geply') ? '-' : c.email}</div>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-secondary font-medium">{c.phone || '-'}</td>
                       <td className="px-4 py-3.5">
@@ -584,7 +588,7 @@ function JobSettingsBanner({ job, onSave }) {
                         {report && c.status === 'report_ready' ? (
                           <button onClick={() => navigate(`/reports/${report.id}`)} className="flex items-center gap-1.5 text-xs font-medium text-brand-300 hover:text-brand-200 transition-colors">
                             <BarChart3 className="h-3.5 w-3.5" /> {Math.round(report.overall_score)}%
-                            <span className="text-tertiary">Ã‚Â·</span>
+                            <span className="text-tertiary">·</span>
                             <span className={['strong_yes','yes'].includes(report.verdict) ? 'text-success' : report.verdict === 'maybe' ? 'text-warning' : 'text-danger'}>{report.verdict?.replace('_', ' ')}</span>
                           </button>
                         ) : report && reInvited ? (
@@ -601,25 +605,43 @@ function JobSettingsBanner({ job, onSave }) {
                           ? <div className="flex items-start gap-1.5"><MessageSquare className="h-3 w-3 text-tertiary mt-0.5 shrink-0" /><span className="text-xs text-secondary line-clamp-2" title={c.re_interview_reason}>{c.re_interview_reason}</span></div>
                           : <span className="text-xs text-tertiary">-</span>}
                       </td>
-                      <td className="px-4 py-3.5 text-right align-middle">
-                        <div className="inline-flex items-center gap-0.5 justify-end">
-                          {c.invite_token && !c.invite_token.includes('no-token') && (
-                            <button onClick={() => copyInviteLink(c)} title="Copy invite link"
-                              className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-all ${copiedId === c.id ? 'bg-success/15 text-success border border-success/30' : 'text-brand-300 hover:bg-brand-500/10'}`}>
-                              {copiedId === c.id ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
-                            </button>
-                          )}
-                          {c.resume_parsed && <button onClick={() => setQuestionsCandidate(c)} title="View interview questions" className="p-1.5 text-brand-300 hover:text-brand-200 hover:bg-brand-500/10 rounded-md transition-colors"><HelpCircle className="h-3.5 w-3.5" /></button>}
-                          <button onClick={() => setEditCandidate(c)} title="Edit" className="p-1.5 text-tertiary hover:text-white hover:bg-white/5 rounded-md transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                          {canReInterview && <button onClick={() => setReInterviewCandidate(c)} title="Re-interview" className="p-1.5 text-warning hover:bg-warning/10 rounded-md transition-colors"><RotateCcw className="h-3.5 w-3.5" /></button>}
-                          <button onClick={() => setDeleteCandidate(c)} title="Delete" className="p-1.5 text-tertiary hover:text-danger hover:bg-danger/10 rounded-md transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </div>
+                      <td className="px-2 py-3.5 text-center">
+                        {c.invite_token && !c.invite_token.includes('no-token') ? (
+                          <button onClick={() => copyInviteLink(c)} title="Copy invite link"
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all ${copiedId === c.id ? 'bg-success/15 text-success' : 'text-brand-300 hover:bg-brand-500/10'}`}>
+                            {copiedId === c.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                        ) : <span className="text-tertiary text-xs">-</span>}
+                      </td>
+                      <td className="px-2 py-3.5 text-center">
+                        {c.resume_parsed ? (
+                          <button onClick={() => setQuestionsCandidate(c)} title="View interview questions" className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-brand-300 hover:text-brand-200 hover:bg-brand-500/10 transition-all">
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        ) : <span className="text-tertiary text-xs">-</span>}
+                      </td>
+                      <td className="px-2 py-3.5 text-center">
+                        <button onClick={() => setEditCandidate(c)} title="Edit candidate" className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-tertiary hover:text-white hover:bg-white/5 transition-all">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                      <td className="px-2 py-3.5 text-center">
+                        {canReInterview ? (
+                          <button onClick={() => setReInterviewCandidate(c)} title="Re-interview candidate" className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-warning hover:bg-warning/10 transition-all">
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          </button>
+                        ) : <span className="text-tertiary text-xs">-</span>}
+                      </td>
+                      <td className="px-2 py-3.5 text-center">
+                        <button onClick={() => setDeleteCandidate(c)} title="Delete candidate" className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-tertiary hover:text-danger hover:bg-danger/10 transition-all">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </td>
                     </tr>
                   )
                 })}
                 {filteredSorted.length === 0 && searchQuery && (
-                  <tr><td colSpan={10} className="text-center py-8 text-tertiary text-sm">No candidates match "{searchQuery}"</td></tr>
+                  <tr><td colSpan={14} className="text-center py-8 text-tertiary text-sm">No candidates match "{searchQuery}"</td></tr>
                 )}
               </tbody>
             </table>
