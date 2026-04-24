@@ -19,7 +19,7 @@ from app.models.base import create_tables, engine
 logger = structlog.get_logger()
 
 
-# ── Request ID Middleware ──
+# â”€â”€ Request ID Middleware â”€â”€
 # Every request gets a unique ID for tracing through logs, error reports, etc.
 
 
@@ -35,7 +35,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
-# ── Lifespan ──
+# â”€â”€ Lifespan â”€â”€
 
 
 @asynccontextmanager
@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("app_shutdown")
 
 
-# ── App Factory ──
+# â”€â”€ App Factory â”€â”€
 
 
 def create_app() -> FastAPI:
@@ -69,11 +69,11 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.debug else None,
     )
 
-    # ── Middleware (order matters — first added = outermost) ──
+    # â”€â”€ Middleware (order matters â€” first added = outermost) â”€â”€
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(RateLimitMiddleware)
 
-    # CORS — production uses explicit origins from env; dev uses localhost defaults
+    # CORS â€” production uses explicit origins from env; dev uses localhost defaults
     allowed_methods = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
     allowed_headers = ["Authorization", "Content-Type", "X-Request-ID"]
 
@@ -85,7 +85,7 @@ def create_app() -> FastAPI:
         allow_headers=allowed_headers,
     )
 
-    # ── Exception Handlers ──
+    # â”€â”€ Exception Handlers â”€â”€
 
     @app.exception_handler(AppException)
     async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
@@ -127,14 +127,18 @@ def create_app() -> FastAPI:
             },
         )
 
-    # ── Routes ──
+    # â”€â”€ Routes â”€â”€
     app.include_router(api_router)
     from app.api.routes.interview_session import router as interview_session_router
     app.include_router(interview_session_router, prefix="/api/v1")
 
-    # ── Password Reset Routes ──
+    # â”€â”€ Password Reset Routes â”€â”€
     from app.api.routes.password_reset import router as password_reset_router
     app.include_router(password_reset_router)
+
+    # -- Candidate Interview Questions CRUD --
+    from app.api.routes.questions import router as questions_router
+    app.include_router(questions_router, prefix="/api/v1")
 
     @app.get("/health")
     async def health() -> dict:

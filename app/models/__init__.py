@@ -20,3 +20,5 @@ __all__ = [
     "Report",
     "Notification",
 ]
+
+from app.models.interview_question import InterviewQuestion  # noqa: F401

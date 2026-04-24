@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobsApi, candidatesApi, reportsApi } from '../lib/api'
+import QuestionsDrawer from '../components/QuestionsDrawer'
 import { Users, Send, Calendar, FileText, Copy, Check, Clock, BarChart3, RotateCcw, X, MessageSquare, Trash2, Pencil, Upload, Search, ArrowUpDown, ArrowUp, ArrowDown, MapPin, Sun, Save, DollarSign, Plus, HelpCircle } from 'lucide-react'
 
 const STATUS_PILL = {
@@ -303,6 +304,7 @@ function JobSettingsBanner({ job, onSave }) {
   const [loading, setLoading] = useState(true)
   const [reInterviewCandidate, setReInterviewCandidate] = useState(null)
   const [editCandidate, setEditCandidate] = useState(null)
+  const [questionsCandidate, setQuestionsCandidate] = useState(null)
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState('')
@@ -531,7 +533,7 @@ function JobSettingsBanner({ job, onSave }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-white/[0.02] text-secondary text-[11px] uppercase tracking-wider">
+                <tr className="bg-white/[0.04] text-brand-200/80 text-[10.5px] uppercase tracking-[0.14em] font-semibold border-b border-white/10">
                   <th className="px-3 py-3 w-10">
                     {pendingCandidates.length > 0 && (
                       <input type="checkbox" checked={selected.size === pendingCandidates.length && pendingCandidates.length > 0} onChange={toggleAll}
@@ -542,11 +544,11 @@ function JobSettingsBanner({ job, onSave }) {
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Candidate" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Phone" field="phone" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
-                  <th className="text-left px-4 py-3 font-medium">Resume</th>
+                  <th className="text-center px-4 py-3 font-medium" title="Resume parsing status">Resume</th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Scheduled" field="scheduled" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Report" field="score" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium">Notes</th>
-                  <th className="text-left px-4 py-3 font-medium">Actions</th>
+                  <th className="text-right px-4 py-3 font-medium min-w-[180px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -556,7 +558,7 @@ function JobSettingsBanner({ job, onSave }) {
                   const reInvited = isReInvited(c)
                   const isPending = c.status === 'pending'
                   return (
-                    <tr key={c.id} className={`transition-colors ${selected.has(c.id) ? 'bg-brand-500/10' : 'hover:bg-white/[0.03]'}`}>
+                    <tr key={c.id} className={`transition-all duration-150 ${selected.has(c.id) ? 'bg-brand-500/10 hover:bg-brand-500/15' : 'hover:bg-gradient-to-r hover:from-white/[0.02] hover:via-white/[0.04] hover:to-white/[0.02]'}`}>
                       <td className="px-3 py-3.5">
                         {isPending
                           ? <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleSelect(c.id)} className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-brand-500 focus:ring-brand-500" />
@@ -574,7 +576,7 @@ function JobSettingsBanner({ job, onSave }) {
                           <div className="flex items-center gap-1 mt-1"><RotateCcw className="h-3 w-3 text-warning" /><span className="text-[10px] text-warning font-medium">Retry #{c.re_interview_count}</span></div>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">{c.resume_parsed ? <Check className="h-4 w-4 text-success" /> : <Clock className="h-4 w-4 text-tertiary" />}</td>
+                      <td className="px-4 py-3.5 text-center"><span title={c.resume_parsed ? "Resume parsed" : "Awaiting resume"} className="inline-flex">{c.resume_parsed ? <Check className="h-4 w-4 text-success" /> : <Clock className="h-4 w-4 text-tertiary" />}</span></td>
                       <td className="px-4 py-3.5 text-xs text-secondary">
                         {c.scheduled_at ? new Date(c.scheduled_at.endsWith?.('Z') ? c.scheduled_at : c.scheduled_at + 'Z').toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-'}
                       </td>
@@ -582,7 +584,7 @@ function JobSettingsBanner({ job, onSave }) {
                         {report && c.status === 'report_ready' ? (
                           <button onClick={() => navigate(`/reports/${report.id}`)} className="flex items-center gap-1.5 text-xs font-medium text-brand-300 hover:text-brand-200 transition-colors">
                             <BarChart3 className="h-3.5 w-3.5" /> {Math.round(report.overall_score)}%
-                            <span className="text-tertiary">·</span>
+                            <span className="text-tertiary">Ã‚Â·</span>
                             <span className={['strong_yes','yes'].includes(report.verdict) ? 'text-success' : report.verdict === 'maybe' ? 'text-warning' : 'text-danger'}>{report.verdict?.replace('_', ' ')}</span>
                           </button>
                         ) : report && reInvited ? (
@@ -599,14 +601,15 @@ function JobSettingsBanner({ job, onSave }) {
                           ? <div className="flex items-start gap-1.5"><MessageSquare className="h-3 w-3 text-tertiary mt-0.5 shrink-0" /><span className="text-xs text-secondary line-clamp-2" title={c.re_interview_reason}>{c.re_interview_reason}</span></div>
                           : <span className="text-xs text-tertiary">-</span>}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1">
+                      <td className="px-4 py-3.5 text-right align-middle">
+                        <div className="inline-flex items-center gap-0.5 justify-end">
                           {c.invite_token && !c.invite_token.includes('no-token') && (
                             <button onClick={() => copyInviteLink(c)} title="Copy invite link"
                               className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-all ${copiedId === c.id ? 'bg-success/15 text-success border border-success/30' : 'text-brand-300 hover:bg-brand-500/10'}`}>
                               {copiedId === c.id ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
                             </button>
                           )}
+                          {c.resume_parsed && <button onClick={() => setQuestionsCandidate(c)} title="View interview questions" className="p-1.5 text-brand-300 hover:text-brand-200 hover:bg-brand-500/10 rounded-md transition-colors"><HelpCircle className="h-3.5 w-3.5" /></button>}
                           <button onClick={() => setEditCandidate(c)} title="Edit" className="p-1.5 text-tertiary hover:text-white hover:bg-white/5 rounded-md transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
                           {canReInterview && <button onClick={() => setReInterviewCandidate(c)} title="Re-interview" className="p-1.5 text-warning hover:bg-warning/10 rounded-md transition-colors"><RotateCcw className="h-3.5 w-3.5" /></button>}
                           <button onClick={() => setDeleteCandidate(c)} title="Delete" className="p-1.5 text-tertiary hover:text-danger hover:bg-danger/10 rounded-md transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -627,6 +630,7 @@ function JobSettingsBanner({ job, onSave }) {
       {reInterviewCandidate && <ReInterviewModal candidate={reInterviewCandidate} onClose={() => setReInterviewCandidate(null)} onConfirm={handleReInterview} />}
       {editCandidate && <EditCandidateModal candidate={editCandidate} onClose={() => setEditCandidate(null)} onSave={handleEditSave} />}
       {deleteCandidate && <DeleteConfirmModal candidate={deleteCandidate} onClose={() => setDeleteCandidate(null)} onConfirm={handleDelete} />}
+      {questionsCandidate && <QuestionsDrawer candidateId={questionsCandidate.id} candidateName={questionsCandidate.full_name || questionsCandidate.email} onClose={() => setQuestionsCandidate(null)} />}
     </div>
   )
 }
