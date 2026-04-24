@@ -30,6 +30,10 @@ class ReportResponse(BaseModel):
     created_at: datetime
     screenshots: list | None = None
     transcript: str = ""
+    # -- JD Match (pre-interview screening, sourced from candidate) --
+    jd_match_score: int = 0
+    jd_match_verdict: str = ""
+    jd_match_breakdown: str = ""
 
     model_config = {"from_attributes": True}
 

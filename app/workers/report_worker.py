@@ -140,6 +140,7 @@ def generate_report_sync(interview_id: str) -> dict:
                     "strengths": json.dumps(analysis.get("strengths", [])),
                     "weaknesses": json.dumps(analysis.get("weaknesses", [])),
                     "key_qa_pairs": json.dumps(analysis.get("key_qa_pairs", [])),
+                    "qa_by_category": json.dumps(analysis.get("qa_by_category", {})),
                     "recommendations": json.dumps(analysis.get("recommendations", {})),
                     "integrity_score": proctor_score,
                     "proctor_flags": json.dumps(proctor_events),

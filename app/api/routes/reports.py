@@ -11,10 +11,16 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 def _to_response(report) -> ReportResponse:
-    """Convert a Report model to response, injecting transcript from interview."""
+    """Convert a Report model to response, injecting transcript + JD Match from related rows."""
     resp = ReportResponse.model_validate(report)
+    # Transcript comes from the related Interview row
     if report.interview and report.interview.transcript:
         resp.transcript = report.interview.transcript
+    # JD Match fields come from the related Candidate row (pre-interview screening)
+    if report.candidate:
+        resp.jd_match_score = report.candidate.jd_match_score or 0
+        resp.jd_match_verdict = report.candidate.jd_match_verdict or ""
+        resp.jd_match_breakdown = report.candidate.jd_match_breakdown or ""
     return resp
 
 

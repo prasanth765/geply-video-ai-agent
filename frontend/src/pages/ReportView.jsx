@@ -526,6 +526,120 @@ function QACategorySection({ qaByCategory }) {
   )
 }
 
+
+// ============================================================================
+// JD Match Analysis Section (pre-interview screening)
+// Rendered at the bottom of the report. Returns null if no JD match data.
+// ============================================================================
+function JdMatchReportSection({ report }) {
+  const score = report.jd_match_score || 0
+  const verdict = report.jd_match_verdict || ""
+  if (!score && !verdict) return null
+
+  let breakdown = null
+  try { breakdown = report.jd_match_breakdown ? JSON.parse(report.jd_match_breakdown) : null }
+  catch (e) { breakdown = null }
+
+  const isGo = verdict === 'go'
+  const subScores = breakdown?.sub_scores || {}
+  const skillsMatched = breakdown?.skills_matched || []
+  const skillsMissing = breakdown?.skills_missing || []
+  const dynamicSignals = breakdown?.dynamic_signals || []
+  const rationale = breakdown?.rationale || ""
+
+  const subScoreEntries = Object.entries(subScores)
+
+  return (
+    <div className="glass rounded-2xl p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-display text-lg text-white">JD Match Analysis</h2>
+          <p className="text-xs text-tertiary mt-1">Pre-interview screening based on resume vs job description</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-3xl font-semibold text-white tabular-nums">{score}</div>
+          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+            isGo ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                 : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+          }`}>
+            {isGo ? 'Go' : 'No-Go'}
+          </div>
+        </div>
+      </div>
+
+      {subScoreEntries.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+          {subScoreEntries.map(([key, val]) => {
+            const num = Number(val) || 0
+            const pct = Math.min(100, (num / 5) * 100)
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+            return (
+              <div key={key} className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                <div className="text-[10px] text-tertiary uppercase tracking-wider mb-1">{label}</div>
+                <div className="text-lg font-semibold text-white tabular-nums">
+                  {num.toFixed(1)}<span className="text-xs text-tertiary">/5</span>
+                </div>
+                <div className="h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                  <div className="h-full bg-brand-400 rounded-full" style={{width: `${pct}%`}} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {(skillsMatched.length > 0 || skillsMissing.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          {skillsMatched.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-emerald-300 mb-2 uppercase tracking-wider">Skills Matched</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {skillsMatched.map((s, i) => (
+                  <span key={i} className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-500/20">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {skillsMissing.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-amber-300 mb-2 uppercase tracking-wider">Skills Missing</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {skillsMissing.map((s, i) => (
+                  <span key={i} className="text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-200 border border-amber-500/20">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {dynamicSignals.length > 0 && (
+        <div className="mb-5">
+          <h4 className="text-xs font-semibold text-brand-300 mb-2 uppercase tracking-wider">Additional Signals</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            {dynamicSignals.map((sig, i) => (
+              <div key={i} className="bg-white/[0.03] rounded-lg p-2.5 border border-white/5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-tertiary">{sig.name || sig.label || 'Signal'}</span>
+                  <span className="text-sm font-semibold text-white tabular-nums">{sig.score ?? 0}/5</span>
+                </div>
+                {sig.note && <div className="text-[10px] text-tertiary mt-1">{sig.note}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rationale && (
+        <div>
+          <h4 className="text-xs font-semibold text-secondary mb-2 uppercase tracking-wider">Rationale</h4>
+          <p className="text-sm text-secondary leading-relaxed italic">{rationale}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ReportView() {
   const { reportId } = useParams()
   const [report, setReport] = useState(null)
@@ -829,6 +943,9 @@ export default function ReportView() {
 
         {/* Integrity Breakdown */}
         <IntegrityBreakdown breakdown={integrityBreakdown} proctorFlags={report.proctor_flags} />
+
+        {/* JD Match Analysis (pre-interview screening) */}
+        <JdMatchReportSection report={report} />
       </div>
     </>
   )
