@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobsApi, candidatesApi, reportsApi } from '../lib/api'
 import QuestionsDrawer from '../components/QuestionsDrawer'
+import JDMatchCell from '../components/JDMatchCell'
+import JDMatchDrawer from '../components/JDMatchDrawer'
 import { Users, Send, Calendar, FileText, Copy, Check, Clock, BarChart3, RotateCcw, X, MessageSquare, Trash2, Pencil, Upload, Search, ArrowUpDown, ArrowUp, ArrowDown, MapPin, Sun, Save, DollarSign, Plus, HelpCircle } from 'lucide-react'
 
 const STATUS_PILL = {
@@ -305,6 +307,7 @@ function JobSettingsBanner({ job, onSave }) {
   const [reInterviewCandidate, setReInterviewCandidate] = useState(null)
   const [editCandidate, setEditCandidate] = useState(null)
   const [questionsCandidate, setQuestionsCandidate] = useState(null)
+  const [jdMatchCandidate, setJdMatchCandidate] = useState(null)
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState('')
@@ -546,6 +549,7 @@ function JobSettingsBanner({ job, onSave }) {
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-center px-4 py-3 font-medium" title="Resume parsing status">Resume</th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Scheduled" field="scheduled" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
+                  <th className="text-left px-4 py-3 font-medium"><SortHeader label="JD Match" field="jd_match_score" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium"><SortHeader label="Report" field="score" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></th>
                   <th className="text-left px-4 py-3 font-medium">Notes</th>
                   <th className="text-center px-2 py-3 font-medium whitespace-nowrap">Invite</th>
@@ -583,6 +587,9 @@ function JobSettingsBanner({ job, onSave }) {
                       <td className="px-4 py-3.5 text-center"><span title={c.resume_parsed ? "Resume parsed" : "Awaiting resume"} className="inline-flex">{c.resume_parsed ? <Check className="h-4 w-4 text-success" /> : <Clock className="h-4 w-4 text-tertiary" />}</span></td>
                       <td className="px-4 py-3.5 text-xs text-secondary">
                         {c.scheduled_at ? new Date(c.scheduled_at.endsWith?.('Z') ? c.scheduled_at : c.scheduled_at + 'Z').toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-'}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <JDMatchCell candidate={c} onOpen={setJdMatchCandidate} />
                       </td>
                       <td className="px-4 py-3.5">
                         {report && c.status === 'report_ready' ? (
@@ -641,7 +648,7 @@ function JobSettingsBanner({ job, onSave }) {
                   )
                 })}
                 {filteredSorted.length === 0 && searchQuery && (
-                  <tr><td colSpan={14} className="text-center py-8 text-tertiary text-sm">No candidates match "{searchQuery}"</td></tr>
+                  <tr><td colSpan={15} className="text-center py-8 text-tertiary text-sm">No candidates match "{searchQuery}"</td></tr>
                 )}
               </tbody>
             </table>
@@ -653,6 +660,7 @@ function JobSettingsBanner({ job, onSave }) {
       {editCandidate && <EditCandidateModal candidate={editCandidate} onClose={() => setEditCandidate(null)} onSave={handleEditSave} />}
       {deleteCandidate && <DeleteConfirmModal candidate={deleteCandidate} onClose={() => setDeleteCandidate(null)} onConfirm={handleDelete} />}
       {questionsCandidate && <QuestionsDrawer candidateId={questionsCandidate.id} candidateName={questionsCandidate.full_name || questionsCandidate.email} onClose={() => setQuestionsCandidate(null)} />}
+      {jdMatchCandidate && <JDMatchDrawer candidate={jdMatchCandidate} onClose={() => setJdMatchCandidate(null)} />}
     </div>
   )
 }

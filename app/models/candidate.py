@@ -32,6 +32,14 @@ class Candidate(Base):
     consent_given: Mapped[bool] = mapped_column(Boolean, default=False)
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # -- JD Match (pre-interview resume screening) --
+    # Computed after resume parse. Zero until scoring completes.
+    jd_match_score: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    # "go" | "no_go" | "" (empty while pending)
+    jd_match_verdict: Mapped[str] = mapped_column(String(16), default="", index=True)
+    # Full LLM breakdown stored as JSON text: sub_scores, skills_matched, skills_missing, rationale
+    jd_match_breakdown: Mapped[str] = mapped_column(Text, default="")
+
     # Re-interview tracking
     re_interview_count: Mapped[int] = mapped_column(Integer, default=0)
     re_interview_reason: Mapped[str] = mapped_column(Text, default="")

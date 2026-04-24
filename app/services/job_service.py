@@ -211,6 +211,7 @@ class JobService:
 
         logger.info("bulk_resumes_uploaded", job_id=job_id,
                      uploaded=len(candidates), skipped=skipped)
+
         if candidates:
             await self._notify_safe(
                 job.recruiter_id, "candidate_uploaded",

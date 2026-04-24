@@ -130,6 +130,36 @@ async def upload_resumes(
         file_tuples.append((content, f.filename or f"resume_{idx}.pdf", email))
 
     candidates = await service.upload_resumes_bulk(job_id, file_tuples)
+
+    # Force commit NOW so the background threads can see the new rows.
+    # Without this, threads use fresh connections that read from disk but the
+    # transaction is still pending in the async session -> candidate_not_found.
+    await db.commit()
+
+    # -- Trigger JD match screening for each uploaded candidate (fire-and-forget) --
+    import threading as _threading
+    from app.services.screening_service import generate_and_save_screening_sync as _screen
+    import structlog as _structlog
+    _log = _structlog.get_logger()
+
+    def _screening_job(cid: str):
+        try:
+            _screen(cid)
+        except Exception as _exc:
+            _log.error("screening_background_failed", candidate_id=cid, error=str(_exc))
+
+    _scored = 0
+    for _cand in candidates:
+        if getattr(_cand, "resume_parsed", False):
+            _threading.Thread(
+                target=_screening_job,
+                args=(_cand.id,),
+                daemon=True,
+                name=f"screen-{_cand.id[:8]}",
+            ).start()
+            _scored += 1
+    _log.info("screening_triggered_batch", count=_scored)
+
     return {
         "job_id": job_id,
         "uploaded": len(candidates),

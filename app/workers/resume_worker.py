@@ -63,4 +63,5 @@ def _update_candidate_resume(candidate_id: str, text: str) -> None:
             {"text": text, "id": candidate_id},
         )
         conn.commit()
+
     engine.dispose()

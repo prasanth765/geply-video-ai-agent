@@ -26,6 +26,10 @@ class CandidateResponse(BaseModel):
     re_interview_count: int = 0
     re_interview_reason: str = ""
     scheduled_at: datetime | None = None  # Computed from schedule_slots, not a DB field
+    # -- JD Match (pre-interview screening) --
+    jd_match_score: int = 0
+    jd_match_verdict: str = ""
+    jd_match_breakdown: str = ""
     created_at: datetime
 
     model_config = {"from_attributes": True}
