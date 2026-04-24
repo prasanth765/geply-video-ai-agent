@@ -34,11 +34,10 @@ from app.repositories.interview_repo import InterviewRepository
 from app.repositories.job_repo import JobRepository
 from app.repositories.user_repo import UserRepository
 from app.services.interview_service import InterviewService
-from app.services.prompt_builder import build_interview_prompt
+from app.services.prompt_builder import build_interview_prompt, build_interview_prompt_from_db
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/internal", tags=["internal"])
-
 
 # ── Interview context (used by frontend to load room) ──────────────────────────
 @router.get("/interview-context/{room_name}")
@@ -87,14 +86,12 @@ async def get_interview_context(room_name: str, db: DBSession) -> dict:
         "recruiter_avatar":     recruiter_avatar,   # key must match frontend roomData
     }
 
-
 # ── Interview lifecycle ────────────────────────────────────────────────────────
 @router.post("/interview/{interview_id}/start")
 async def mark_interview_started(interview_id: str, db: DBSession) -> dict:
     service = InterviewService(db)
     interview = await service.start_interview(interview_id)
     return {"status": "started", "interview_id": interview.id}
-
 
 @router.post("/interview/{interview_id}/end")
 async def mark_interview_ended(interview_id: str, request: Request, db: DBSession) -> dict:
@@ -135,7 +132,6 @@ async def mark_interview_ended(interview_id: str, request: Request, db: DBSessio
         "interview_id":     interview.id,
         "duration_seconds": interview.duration_seconds,
     }
-
 
 # ── Chat — LLM only, no TTS (TTS fetched separately by frontend) ──────────────
 @router.post("/chat")
@@ -217,17 +213,31 @@ async def chat_with_ai(request: Request, db: DBSession) -> dict:
             logger.warning("context_fetch_failed", error=str(exc))
 
     # ── Build prompt (single source of truth in prompt_builder.py) ────────
-    system_prompt = build_interview_prompt(
-        job_title            = job_title,
-        candidate_name       = candidate_name,
+    # -- Try DB-driven prompt first (questions pre-generated at invite time) --
+    # This is the authoritative path: the AI asks EXACTLY the saved questions.
+    # If a candidate has no saved questions (edge case - pre-feature candidate),
+    # fall back to the dynamic prompt that generates questions at runtime.
+    system_prompt = await build_interview_prompt_from_db(
+        candidate_id         = candidate.id,
+        db                   = db,
         recruiter_first_name = recruiter_first,
-        jd_text              = jd_text,
-        requirements         = requirements,
-        resume_text          = resume_text,
-        office_locations     = office_locations,
-        shift_info           = shift_info,
         company_kb           = company_kb,
     )
+    if not system_prompt:
+        logger.info("interview_prompt_fallback_to_dynamic", candidate_id=candidate.id)
+        system_prompt = build_interview_prompt(
+            job_title            = job_title,
+            candidate_name       = candidate_name,
+            recruiter_first_name = recruiter_first,
+            jd_text              = jd_text,
+            requirements         = requirements,
+            resume_text          = resume_text,
+            office_locations     = office_locations,
+            shift_info           = shift_info,
+            company_kb           = company_kb,
+        )
+    else:
+        logger.info("interview_prompt_from_db", candidate_id=candidate.id)
 
     # ── Guard: reject empty/noise input ──
     last_user_msg = ""
@@ -236,8 +246,28 @@ async def chat_with_ai(request: Request, db: DBSession) -> dict:
         if last_entry.get("role") == "user":
             last_user_msg = last_entry.get("content", "").strip()
     
-    if last_user_msg and len(last_user_msg) < 2:
-        return {"reply": "Sorry, I didn't catch that. Could you say that again?"}
+    # -- Retry guard: reject STT junk but let valid short answers through --
+    # "Yes", "No", "OK" etc are semantically complete answers for many questions
+    # (hygiene, consent, CTC confirm) and must NOT trigger a retry loop.
+    # The threshold still catches genuine STT fragments ("uh", "mm", single letters).
+    _retry_replies = [
+        "Could you repeat that, please?",
+        "Sorry, I missed that -- one more time?",
+        "Just a moment -- could you say that again?",
+        "Would you mind repeating that?",
+    ]
+    _short_valid_answers = {
+        "yes", "yep", "yeah", "yup", "y", "ya",
+        "no", "nope", "nah", "n", "no.",
+        "ok", "k", "okay", "sure", "fine", "cool",
+        "right", "correct", "agreed", "got it",
+    }
+    if last_user_msg:
+        msg_normalized = last_user_msg.lower().strip().rstrip(".,!?;:")
+        is_valid_short = msg_normalized in _short_valid_answers
+        if len(last_user_msg) < 4 and not is_valid_short:
+            import random as _random
+            return {"reply": _random.choice(_retry_replies)}
     
     # Short input guard removed - let LLM handle intent
 
@@ -277,7 +307,6 @@ async def chat_with_ai(request: Request, db: DBSession) -> dict:
         logger.error("llm_failed", error=str(exc))
         return {"reply": "Could you please repeat that?"}
 
-
 # ── TTS — called by frontend after /chat returns ───────────────────────────────
 @router.post("/tts")
 async def text_to_speech(request: Request) -> dict:
@@ -296,7 +325,6 @@ async def text_to_speech(request: Request) -> dict:
     audio_b64 = await generate_audio(tts_text)
     return {"audio": audio_b64}
 
-
 # ── Screenshot serving ────────────────────────────────────────────────────────
 @router.get("/screenshot/{interview_id}/{filename}")
 async def serve_screenshot(interview_id: str, filename: str) -> FileResponse:
@@ -307,7 +335,6 @@ async def serve_screenshot(interview_id: str, filename: str) -> FileResponse:
     if not filepath.exists():
         raise EntityNotFound("Screenshot", filename)
     return FileResponse(str(filepath), media_type="image/jpeg")
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _format_transcript(messages: list[dict]) -> str:
@@ -324,7 +351,6 @@ def _format_transcript(messages: list[dict]) -> str:
         else:
             lines.append(f"{role}: {content}")
     return "\n\n".join(lines)
-
 
 def _save_screenshots(interview_id: str, screenshots: list[dict]) -> None:
     settings       = get_settings()

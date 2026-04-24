@@ -243,8 +243,18 @@ class JobService:
         invites_generated = 0
         failed: list[str] = []
 
+        # Import here to avoid circular import (service -> service)
+        from app.services.question_service import generate_and_save_questions
+
         for candidate in targets:
             try:
+                # -- Generate interview questions FIRST (hard requirement) --
+                # If LLM fails, the candidate does NOT get invited. We prefer
+                # a failed-invite retry over sending an invite that leads to
+                # an empty interview.
+                await generate_and_save_questions(candidate.id, self.session)
+
+                # -- Create invite token (only reached if questions succeeded) --
                 token = create_invite_token(
                     candidate_id=candidate.id,
                     job_id=job_id,
@@ -254,6 +264,8 @@ class JobService:
                 candidate.status = CandidateStatus.INVITED
                 candidate.invite_sent_at = datetime.now(timezone.utc)
                 invites_generated += 1
+                logger.info("invite_with_questions_ready",
+                            candidate_id=candidate.id)
             except Exception as exc:
                 logger.error("invite_generation_failed",
                              candidate_id=candidate.id, error=str(exc))

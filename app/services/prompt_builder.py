@@ -149,3 +149,166 @@ SPEECH RULES:
 
 COMPANY KNOWLEDGE BASE:
 {kb_block if kb_block else "Not loaded. Say: The team will cover that once you move forward."}"""
+
+
+# =============================================================================
+# DB-driven prompt builder (Part 6 feature)
+# =============================================================================
+# This function replaces the dynamic question generation in build_interview_prompt
+# with a strict "ask exactly these saved questions, in order, verbatim" format.
+#
+# Flow:
+#   1. Queries candidate_interview_questions for the candidate.
+#   2. Groups by category (hygiene, jd_fit, resume_verify, ctc, recruiter_custom).
+#   3. Emits each question verbatim under its block header.
+#   4. AI is told: ask these, in order, one at a time. NO additions. NO rephrasing.
+#
+# Returns None if the candidate has zero questions -> caller falls back to the
+# original dynamic build_interview_prompt as a safety net.
+# =============================================================================
+
+from sqlalchemy import select as _select
+from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
+
+
+_CATEGORY_HEADERS = {
+    "hygiene":          "BLOCK A -- HYGIENE",
+    "jd_fit":           "BLOCK B -- JD FIT",
+    "resume_verify":    "BLOCK C -- RESUME VERIFICATION",
+    "ctc":              "BLOCK D -- COMPENSATION",
+    "recruiter_custom": "BLOCK E -- RECRUITER QUESTIONS",
+}
+_CATEGORY_ORDER = ("hygiene", "jd_fit", "resume_verify", "ctc", "recruiter_custom")
+
+
+async def build_interview_prompt_from_db(
+    candidate_id: str,
+    db: _AsyncSession,
+    recruiter_first_name: str = "our",
+    company_kb: str = "",
+) -> str | None:
+    """Build interview prompt from saved candidate questions in DB.
+
+    Returns a system prompt string, OR None if the candidate has no saved
+    questions (indicating the caller should fall back to the dynamic flow).
+
+    The AI is instructed to ask the saved questions VERBATIM, in order, with
+    no regeneration. This is the authoritative path once a candidate is invited.
+    """
+    # Local imports to avoid circular imports at module load time
+    from app.models.candidate import Candidate
+    from app.models.interview_question import InterviewQuestion
+    from app.models.job import Job
+
+    # Load candidate (for name, job link)
+    cand_res = await db.execute(_select(Candidate).where(Candidate.id == candidate_id))
+    candidate = cand_res.scalar_one_or_none()
+    if not candidate:
+        return None
+
+    # Load job (for title)
+    job_res = await db.execute(_select(Job).where(Job.id == candidate.job_id))
+    job = job_res.scalar_one_or_none()
+    if not job:
+        return None
+
+    # Load questions for this candidate, ordered by category then position
+    q_res = await db.execute(
+        _select(InterviewQuestion)
+        .where(InterviewQuestion.candidate_id == candidate_id)
+        .order_by(InterviewQuestion.category, InterviewQuestion.position)
+    )
+    questions = list(q_res.scalars().all())
+    if not questions:
+        return None
+
+    # Group questions by category
+    by_category: dict[str, list[str]] = {cat: [] for cat in _CATEGORY_ORDER}
+    for q in questions:
+        if q.category in by_category:
+            by_category[q.category].append(q.question_text)
+
+    # Build the blocks in canonical order, skipping empty categories
+    blocks: list[str] = []
+    total_questions = 0
+    for cat in _CATEGORY_ORDER:
+        qs = by_category.get(cat, [])
+        if not qs:
+            continue
+        header = _CATEGORY_HEADERS[cat]
+        lines = [f"{header}:"]
+        for idx, qtext in enumerate(qs, start=1):
+            lines.append(f"  Q{total_questions + idx}. {qtext}")
+        blocks.append(chr(10).join(lines))
+        total_questions += len(qs)
+
+    if total_questions == 0:
+        return None
+
+    all_blocks = (chr(10) + chr(10)).join(blocks)
+
+    # Candidate display name (first word only for warm salutation)
+    candidate_name = candidate.full_name or (candidate.email.split("@")[0] if candidate.email else "there")
+    first_name = candidate_name.split()[0] if candidate_name else "there"
+
+    kb_block = (company_kb or "").strip()[:2000] or "Not loaded. Say: The team will cover that once you move forward."
+
+    # Build the final prompt. NOTE: this is a STRICT, no-regeneration prompt.
+    # The AI's only job is to ask the saved questions verbatim in order, with
+    # light warmth + one adaptive probe per shallow answer.
+    return f"""You are {recruiter_first_name}'s AI Interview Assistant at G-E-P, conducting a scheduled video screening.
+Candidate: {candidate_name}
+Role: {job.title}
+
+CRITICAL RULE: Ask ONLY the questions listed below. Do not invent new questions. Do not skip questions. Do not rephrase question text significantly. Ask them in the order given, one at a time.
+
+OPENING:
+System already said: "Hi! Am I speaking with {first_name}?"
+Candidate confirms -> "Great, {first_name}! I'm {recruiter_first_name}'s AI Interview Assistant at G-E-P, here for your {job.title} screening. Let's get started." -> Ask Q1.
+Candidate says NOT INTERESTED -> "Completely understood. Thank you for your time, {first_name}. All the best!" -> Stop.
+Any other response -> treat as confirmation -> intro -> Q1.
+
+ONE-WAY FLOW:
+The interview moves forward only. Never repeat a completed question.
+Check history. Find the LAST question you asked. Ask the NEXT one from the list below.
+
+ADAPTIVE PROBING (light-touch):
+After each answer:
+- If candidate's answer is under 15 words: probe ONCE for a specific example. Then move on to the NEXT question from the list. Do NOT add new questions.
+- If the answer is detailed: acknowledge briefly and move to the NEXT question.
+- Never probe more than once per question.
+
+CONVERSATIONAL WARMTH:
+Vary acknowledgments: "That's helpful", "Good to know", "I see, thanks", "Noted", "That makes sense", "Got it", "Interesting".
+Never repeat the same phrase twice in a row.
+
+CANDIDATE QUESTIONS:
+When candidate asks about company/shift/salary -> answer from KB below -> then continue with the NEXT saved question.
+NEVER say "Sorry I didn't catch that" to a clear English question.
+
+ACKNOWLEDGMENT FORMAT:
+Max 40 words per response. One acknowledgment + one question. Never more.
+
+================================================================================
+QUESTIONS TO ASK (VERBATIM, IN ORDER, ONE AT A TIME):
+
+{all_blocks}
+================================================================================
+
+CLOSING (after all questions above have been asked):
+"Thank you so much for your time, {first_name}. Your profile goes directly to our G-E-P recruitment team -- if there is a strong fit, someone will reach out within a few business days. All the best!"
+
+SPECIAL RESPONSES:
+NOT INTERESTED (1st time): "Understood -- just a couple more minutes. [next question]"
+NOT INTERESTED (2nd time): "Completely understood. Thank you for your time." -> Stop.
+BUSY: "No problem -- the recruiter will follow up. Take care!" -> Stop.
+
+SPEECH RULES:
+- Hyphenate: G-E-P, C-T-C, R-F-P
+- Numbers spoken: "five years" not "5 years"
+- Max 40 words per response
+- One question per response only
+- Natural sentences, no bullet points
+
+COMPANY KNOWLEDGE BASE:
+{kb_block}"""
