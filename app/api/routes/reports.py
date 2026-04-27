@@ -16,11 +16,13 @@ def _to_response(report) -> ReportResponse:
     # Transcript comes from the related Interview row
     if report.interview and report.interview.transcript:
         resp.transcript = report.interview.transcript
-    # JD Match fields come from the related Candidate row (pre-interview screening)
-    if report.candidate:
-        resp.jd_match_score = report.candidate.jd_match_score or 0
-        resp.jd_match_verdict = report.candidate.jd_match_verdict or ""
-        resp.jd_match_breakdown = report.candidate.jd_match_breakdown or ""
+    # JD Match fields come from the related Candidate row (pre-interview screening).
+    # getattr guards against any weird case where the relationship isn't loaded yet.
+    cand = getattr(report, "candidate", None)
+    if cand is not None:
+        resp.jd_match_score = cand.jd_match_score or 0
+        resp.jd_match_verdict = cand.jd_match_verdict or ""
+        resp.jd_match_breakdown = cand.jd_match_breakdown or ""
     return resp
 
 

@@ -58,3 +58,6 @@ class Report(Base):
 
     # Relationships
     interview: Mapped["Interview"] = relationship(back_populates="report", lazy="selectin")
+    # JD Match fields live on the Candidate row; load it with the Report
+    # to avoid async lazy-load errors when reports.py reads report.candidate.
+    candidate: Mapped["Candidate"] = relationship(foreign_keys=[candidate_id], lazy="joined")

@@ -297,6 +297,95 @@ function downloadReportHTML(report, breakdown, recs, skillGaps, plainVerdict) {
     return `<div class="msg ${isAI ? 'msg-ai' : 'msg-cand'}"><small>${isAI ? 'Geply AI' : 'Candidate'}</small>${content}</div>`
   }).join('') : '<p class="muted">No transcript recorded.</p>'
 
+  // ---- JD Match Analysis block (pre-interview screening) ----
+  // Rendered only when the candidate had a JD match run (all today/future candidates do).
+  let jdMatchHtml = ''
+  if (report.jd_match_score > 0 || report.jd_match_verdict) {
+    let jdBreakdown = null
+    try {
+      jdBreakdown = report.jd_match_breakdown ? JSON.parse(report.jd_match_breakdown) : null
+    } catch (e) {
+      jdBreakdown = null
+    }
+    const jdScore = report.jd_match_score || 0
+    const jdVerdict = report.jd_match_verdict || 'no_go'
+    const isJdGo = jdVerdict === 'go'
+    const jdSubs = jdBreakdown?.sub_scores || {}
+    const jdMatched = jdBreakdown?.skills_matched || []
+    const jdMissing = jdBreakdown?.skills_missing || []
+    const jdDynamic = jdBreakdown?.dynamic_signals || []
+    const jdRationale = jdBreakdown?.rationale || ''
+
+    const verdictPillStyle = isJdGo
+      ? 'background:#dcfce7;color:#166534;border:1px solid #bbf7d0'
+      : 'background:#fef3c7;color:#92400e;border:1px solid #fde68a'
+    const verdictLabel = isJdGo ? 'Go' : 'No-Go'
+
+    const subScoresHtml = Object.entries(jdSubs).map(([key, val]) => {
+      const num = Number(val) || 0
+      const pct = Math.min(100, (num / 5) * 100)
+      const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      return `
+        <div class="sc">
+          <div class="sc-head"><span>${label}</span><span class="sc-val">${num.toFixed(1)}<small>/5</small></span></div>
+          <div class="bar"><div class="bar-fill" style="width:${pct}%;background:#a855f7"></div></div>
+        </div>`
+    }).join('')
+
+    const matchedChips = jdMatched.length > 0 ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#059669;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px">Skills matched (${jdMatched.length})</div>
+        <div class="gap-tags">
+          ${jdMatched.map(s => `<span class="gap-tag" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">${s}</span>`).join('')}
+        </div>
+      </div>` : ''
+
+    const missingChips = jdMissing.length > 0 ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#dc2626;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px">Skills missing (${jdMissing.length})</div>
+        <div class="gap-tags">
+          ${jdMissing.map(s => `<span class="gap-tag">${s}</span>`).join('')}
+        </div>
+      </div>` : ''
+
+    const dynamicHtml = jdDynamic.length > 0 ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#6b21a8;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px">Additional signals</div>
+        <div style="font-size:13px;color:#374151;line-height:1.6">
+          ${jdDynamic.map(sig => {
+            const name = typeof sig === 'string' ? sig : (sig.name || sig.label || 'Signal')
+            const score = typeof sig === 'object' ? (sig.score ?? '') : ''
+            return `<div style="padding:6px 0;border-bottom:1px solid #eef0f5">${name}${score !== '' ? `<span style="float:right;color:#6b21a8;font-weight:600">${Number(score).toFixed(1)}/5</span>` : ''}</div>`
+          }).join('')}
+        </div>
+      </div>` : ''
+
+    const rationaleHtml = jdRationale ? `
+      <div class="evidence" style="margin-top:16px;padding:12px 14px;font-size:13px;line-height:1.6">
+        <strong style="color:#6b21a8;display:block;margin-bottom:4px">Rationale</strong>
+        ${jdRationale}
+      </div>` : ''
+
+    jdMatchHtml = `<h2>JD Match Analysis</h2>
+      <div class="big-card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;flex-wrap:wrap">
+          <div>
+            <div class="label" style="margin-bottom:4px">Pre-interview screening</div>
+            <div style="font-size:11px;color:#8b8fa3">Resume vs Job Description match</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="num" style="font-size:38px;line-height:1">${jdScore}<small>/100</small></div>
+            <div style="padding:6px 16px;border-radius:16px;font-weight:700;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;${verdictPillStyle}">${verdictLabel}</div>
+          </div>
+        </div>
+        ${subScoresHtml}
+        ${matchedChips}
+        ${missingChips}
+        ${dynamicHtml}
+        ${rationaleHtml}
+      </div>`
+  }
+
   const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Interview Report - ${verdict}</title>
@@ -412,6 +501,8 @@ ${recs.suggested_probe_questions?.length > 0 ? `<div class="probe"><h4>Suggested
 </div>` : ''}
 
 ${integrityHtml}
+
+${jdMatchHtml}
 
 <h2>Full transcript</h2>
 <div class="transcript">${transcriptHTML}</div>
